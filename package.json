@@ -1,0 +1,12 @@
+{
+  "name": "airsong-dupe",
+  "version": "0.0.0",
+  "description": "An application that stream audio from 1 device to another. Specifically usefull when you want to stream any audio from mobile to a TV/PC",
+  "license": "MIT",
+  "author": "OMKAR AGRAWAL",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
