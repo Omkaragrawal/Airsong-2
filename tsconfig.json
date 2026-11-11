@@ -1,0 +1,48 @@
+{
+  "compilerOptions": {
+    "outDir": "./build",
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "ESNext"],
+    "declaration": false,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": false,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleDetection": "auto",
+    "allowJs": true,
+    "checkJs": false,
+    "noImplicitOverride": true,
+    "noUncheckedSideEffectImports": true,
+    "preserveConstEnums": true,
+    "pretty": true,
+    "preserveWatchOutput": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {}
+  },
+  "include": ["**/*.ts", "**/*.tsx", "next-env.d.ts", "build/types/**/*.ts", "./src/declaration.d.ts"],
+  "exclude": ["node_modules", "eslint.config.mjs", "**/postcss.*js"]
+}

@@ -1,0 +1,6 @@
+build
+coverage
+.git
+node_modules
+.data
+logs
