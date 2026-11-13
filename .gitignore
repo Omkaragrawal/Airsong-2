@@ -149,3 +149,10 @@ vite.config.ts.timestamp-*
 .turbo
 
 scratchpad/
+
+# Airsong build output and generated folders
+build
+apps/sender-mobile/android/
+apps/sender-mobile/ios/
+apps/server/public/
+playwright-report

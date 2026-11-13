@@ -13,7 +13,6 @@ const config = {
   "quoteProps": "consistent",
   "bracketSpacing": true,
   "arrowParens": "always",
-  "plugins": ["prettier-edgejs"]
 }
 
 export default config;
