@@ -32,6 +32,11 @@
       "path": "./node_modules/cz-conventional-changelog"
     }
   },
+  "overrides": {
+    "eslint-plugin-import-x": {
+      "minimatch": "^11.0.8"
+    }
+  },
   "dependencies": {
     "reflect-metadata": "^0.2.2",
     "source-map-support": "^0.5.21"

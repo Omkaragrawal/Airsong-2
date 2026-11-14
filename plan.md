@@ -164,6 +164,7 @@ Work on branch `feat/mvp`. Never stage or commit: leave every change uncommitted
   - `prepare` becomes `node .husky/install.mjs`
   - install `turbo`, `vitest`, `vite`, `@adonisjs/eslint-config`, `@adonisjs/prettier-config` and `eslint-plugin-import-x` as dev dependencies, with caret ranges
   - remove five dev dependencies that nothing imports once the old ESLint configs are deleted: `@eslint/compat`, `@eslint/eslintrc`, `eslint-import-resolver-node`, `@eslint/json`, `globals`. Search the remaining configs first to confirm. `eslint-import-resolver-typescript` stays (removed, then re-added), because the import rules need it.
+  - `overrides` sets `eslint-plugin-import-x` minimatch to `^11.0.8`, patched for GHSA-g3hv-75wg-m249. npm keeps one hoisted minimatch, so eslint, `@eslint/config-array` and typescript-estree move to 11.0.8 too — above their declared `^10.x` ranges, but the dev-only lint toolchain passes and `npm audit` reports 0. A scoped, import-x-only override is not kept separate by npm's single-copy resolution, so this broader pin was chosen on purpose.
   - the user approves the exact install and uninstall commands before they run
 - [ ] Add `turbo.json` (`tasks`: `build` depends on `^build`; `test`, `typecheck`, `lint`; and `dev` with `"cache": false` and `"persistent": true`).
 - [ ] Add the new root config files from the conventions above:
