@@ -12,7 +12,7 @@ import { join, resolve } from 'node:path';
  * Usage: `node scripts/check_no_js.ts` (or `npm run check:no-js`)
  */
 
-const JS_FILE_PATTERN = /\.(?:c|m)?js$/i;
+const JS_FILE_PATTERN = /\.(?:[cm]?js|jsx)$/i;
 
 /** JavaScript files the user decided to keep. Ask before adding to this list. */
 const ALLOWED_JS_FILES: ReadonlySet<string> = new Set([

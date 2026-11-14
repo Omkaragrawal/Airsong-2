@@ -1,5 +1,5 @@
 import eslint from '@eslint/js';
-import { configPkg } from '@adonisjs/eslint-config';
+import { configPkg, INCLUDE_LIST } from '@adonisjs/eslint-config';
 import { defineConfig } from 'eslint/config';
 import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript';
 import { createNodeResolver, importX } from 'eslint-plugin-import-x';
@@ -7,6 +7,24 @@ import tseslint from 'typescript-eslint';
 
 /** Every rule below applies to TypeScript files only. The kept JavaScript configs get no rules. */
 const TS_FILES = ['**/*.ts', '**/*.tsx'];
+
+/**
+ * The AdonisJS preset applies its own rules — prettier/prettier, naming-convention,
+ * consistent-type-imports and the unicorn rules — only to its INCLUDE_LIST, which matches
+ * `.ts` files, so a .tsx file would miss them. Widen exactly the entries whose `files` is
+ * that INCLUDE_LIST to TS_FILES, so a .tsx file gets the same rule set as a .ts file; every
+ * other entry is returned unchanged.
+ */
+function widenPresetTsFilesToTsx(configs) {
+  return configs.map((config) => {
+    const files = config.files;
+    const isPresetTsOnly =
+      Array.isArray(files) &&
+      files.length === INCLUDE_LIST.length &&
+      files.every((pattern, index) => pattern === INCLUDE_LIST[index]);
+    return isPresetTsOnly ? { ...config, files: TS_FILES } : config;
+  });
+}
 
 /**
  * The presets and rules shared by the root and every workspace.
@@ -17,7 +35,7 @@ const TS_FILES = ['**/*.ts', '**/*.tsx'];
  * 2. the AdonisJS preset, which also switches off formatting rules in favour of Prettier
  * 3. the rules carried over from the old config, plus Airsong's own
  */
-export const sharedConfig = [
+export const sharedConfig = widenPresetTsFilesToTsx([
   ...defineConfig({
     name: 'Airsong: presets carried over from the old config',
     files: TS_FILES,
@@ -139,7 +157,7 @@ export const sharedConfig = [
       },
     },
   ),
-];
+]);
 
 /**
  * Root ESLint config: the shared config plus ignores that only make sense at the repo root.

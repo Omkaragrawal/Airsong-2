@@ -113,7 +113,7 @@ Shared settings live once at the repo root. A workspace's own config file only a
 - **JavaScript is off:** set `allowJs: false` in `tsconfig.base.json`. The kept root `tsconfig.json` still has `allowJs: true`, because only its `exclude` and `types` change.
 - **`type`, never `interface`:** every object shape is a `type` alias with a `Type` suffix, for example `SessionType`. Use `interface` only to add fields to a library's existing interface, such as Adonis's `HttpContext` or the browser's `Window`, because TypeScript can't merge a `type` into those. Enforce it with `@typescript-eslint/consistent-type-definitions: ['error', 'type']` in the root `eslint.config.ts` (Task 1). Naming suffixes are listed in AGENTS.md → "Naming — declaration suffixes".
 - **Repo scripts:** files in `scripts/` run directly with Node 26.13+ (`node scripts/x.ts`), which only strips types. They use `scripts/tsconfig.json` with `erasableSyntaxOnly: true`, so they can't use enums, namespaces or parameter properties.
-- **CI check:** `scripts/check_no_js.ts` fails if any `.js`, `.mjs` or `.cjs` file, tracked or untracked (but not gitignored), is outside the allow-list. Untracked files count because nothing is committed during development. CI runs the same script.
+- **CI check:** `scripts/check_no_js.ts` fails if any `.js`, `.jsx`, `.mjs` or `.cjs` file, tracked or untracked (but not gitignored), is outside the allow-list. Untracked files count because nothing is committed during development. CI runs the same script.
 - **Exceptions:** some code can't be TypeScript because the platform requires another language. Keep these as small as possible:
   - Kotlin for the Android Expo modules (Tasks 16–17)
   - Swift for the iOS module and the Broadcast Upload Extension (Tasks 18–19)
@@ -144,7 +144,7 @@ Shared settings live once at the repo root. A workspace's own config file only a
 
 Work on branch `feat/mvp`. Never stage or commit: leave every change uncommitted in the working tree for the user, who reviews and commits it. Never push or open PRs. Milestone demos are listed where they apply.
 
-**Checks during development:** no tests are written until Phase 7. Every task must show typecheck with 0 errors, lint with 0 warnings, a successful build and, where something runs, a local run. Dev servers and apps may be started on this machine, with three rules: no external or third-party services, stop every process you start before reporting, and leave no background servers running. For every check, report the exact command, its exit code and the key output lines.
+**Checks during development:** no tests are written until Phase 7. Every task must show typecheck with 0 errors, lint with 0 warnings, a successful build and, where something runs, a local run. Dev servers and apps may be started on this machine, with three rules: no external or third-party services, stop every process you start before reporting, and leave no background servers running. For every check, report the exact command, its exit code and the key output lines. Steps that need an outside service are run by the user, not the agent: EAS cloud builds (Tasks 18–19, and Task 15 when it isn't built locally) and playback from third-party apps such as YouTube or Spotify (Task 16's Verify and the milestone demos). The agent prepares the step, and the user reports the result.
 
 **Before Task 1:** the repo already has config files, and the user has decided what happens to each:
 - **Kept:** the five JavaScript files (`.husky/install.mjs`, `.prettierrc.mjs`, `commitlint.config.js`, `ecosystem.config.js`, `lint-staged.config.js`) and `tsconfig.json`. Change them only where Task 1 says so. `.prettierrc.config.ts` also stays, unused.
@@ -164,7 +164,7 @@ Work on branch `feat/mvp`. Never stage or commit: leave every change uncommitted
   - `prepare` becomes `node .husky/install.mjs`
   - install `turbo`, `vitest`, `vite`, `@adonisjs/eslint-config`, `@adonisjs/prettier-config` and `eslint-plugin-import-x` as dev dependencies, with caret ranges
   - remove five dev dependencies that nothing imports once the old ESLint configs are deleted: `@eslint/compat`, `@eslint/eslintrc`, `eslint-import-resolver-node`, `@eslint/json`, `globals`. Search the remaining configs first to confirm. `eslint-import-resolver-typescript` stays (removed, then re-added), because the import rules need it.
-  - `overrides` sets `eslint-plugin-import-x` minimatch to `^11.0.8`, patched for GHSA-g3hv-75wg-m249. npm keeps one hoisted minimatch, so eslint, `@eslint/config-array` and typescript-estree move to 11.0.8 too — above their declared `^10.x` ranges, but the dev-only lint toolchain passes and `npm audit` reports 0. A scoped, import-x-only override is not kept separate by npm's single-copy resolution, so this broader pin was chosen on purpose.
+  - `overrides` sets the minimatch used by `eslint-plugin-import-x` to `^11.0.8`, the version patched for GHSA-g3hv-75wg-m249. npm resolved a single minimatch 11.0.8 for the whole ESLint toolchain, so `eslint`, `@eslint/config-array` and `@typescript-eslint/typescript-estree` also run on it, above their declared `^10.x` ranges. Lint, typecheck and the import rules pass on it, and `npm audit` reports 0 vulnerabilities; the user chose to keep it.
   - the user approves the exact install and uninstall commands before they run
 - [ ] Add `turbo.json` (`tasks`: `build` depends on `^build`; `test`, `typecheck`, `lint`; and `dev` with `"cache": false` and `"persistent": true`).
 - [ ] Add the new root config files from the conventions above:
@@ -179,7 +179,7 @@ Work on branch `feat/mvp`. Never stage or commit: leave every change uncommitted
 - [ ] Set up commitlint: add the scope list to the existing `commitlint.config.js` (`scope-enum` as an error with the scopes from the conventions above, and `scope-empty` as a warning). Don't add a `commitlint.config.ts`. `.husky/commit-msg` stays as it is.
 - [ ] Add `scripts/check_no_js.ts`, plus `scripts/tsconfig.json` and the root script `check:no-js`. The script:
   - lists files with `git ls-files --cached --others --exclude-standard` and skips paths that aren't on disk
-  - fails on any `.js`, `.mjs` or `.cjs` file not on the allow-list
+  - fails on any `.js`, `.jsx`, `.mjs` or `.cjs` file not on the allow-list
   - allow-list: `.husky/install.mjs`, `.prettierrc.mjs`, `commitlint.config.js`, `ecosystem.config.js`, `lint-staged.config.js`
 - [ ] Every workspace scaffolded in later tasks replaces the generator's config files with ones that extend these root files.
 - [ ] Extend `.gitignore` with `build`, `apps/sender-mobile/android/`, `apps/sender-mobile/ios/` (Expo regenerates these), `apps/server/public/` and `playwright-report`. `dist`, `.turbo` and `.env` are already in it.
@@ -484,7 +484,7 @@ All automated tests are written here, after development is complete. The items a
 - [ ] Before plan.md is deleted:
   - move the lasting conventions and decisions from plan.md into AGENTS.md and the README
   - update AGENTS.md's references to plan.md
-  - confirm `grep -ri "plan.md" --exclude-dir=node_modules --exclude-dir=.git --exclude=plan.md .` finds nothing
+  - confirm `grep -ri "plan.md" --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=scratchpad --exclude-dir=.claude --exclude=skills-lock.json --exclude=plan.md .` finds nothing
 
 ### Phase 9 — Optional: PC bridge for apps that block capture (build last, not part of the MVP)
 
