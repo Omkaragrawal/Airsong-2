@@ -3,6 +3,7 @@
     "outDir": "./build",
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "ESNext"],
+    "types": ["node"],
     "declaration": false,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -44,5 +45,5 @@
     "paths": {}
   },
   "include": ["**/*.ts", "**/*.tsx", "next-env.d.ts", "build/types/**/*.ts", "./src/declaration.d.ts"],
-  "exclude": ["node_modules", "eslint.config.mjs", "**/postcss.*js"]
+  "exclude": ["node_modules", "eslint.config.mjs", "**/postcss.*js", "apps", "packages", "scratchpad", "eslint.config.ts"]
 }
