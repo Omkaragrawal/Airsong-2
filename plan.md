@@ -29,7 +29,7 @@ Decisions from the user, including feedback on v1:
  Sender (any)            │  AdonisJS server (public, HTTPS) │            Receiver (browser)
  ───────────             │                                  │            ──────────────────
  POST /api/sessions ───▶ │ SessionRegistry (in-memory)      │ ◀── GET /api/sessions/nearby (same public IP)
- SSE  /events      ◀──── │ offer {viewerId, sdp} ───────────│ ◀── POST /api/sessions/:code/whep (SDP offer)
+ SSE  /events      ◀──── │ OFFER {viewerId, sdp} ───────────│ ◀── POST /api/sessions/:code/whep (SDP offer)
  POST /answers/:vid ───▶ │ resolves pending request ────────│ ──▶ 201 + SDP answer
                          │ GET /api/ice-servers (STUN/TURN) │
                          └──────────────────────────────────┘
@@ -43,7 +43,7 @@ Decisions from the user, including feedback on v1:
 
 - **The receiver is the WHEP client.** It creates a receive-only audio offer, tuned for Opus stereo, and waits for ICE gathering to finish (or 2 s). It POSTs the full offer (no trickle ICE) and applies the answer. Restarting means sending a new POST.
 - **The sender is the WHEP answerer.** It keeps one `RTCPeerConnection` per receiver (default limit 5) and answers with a send-only track. Its answer includes `sprop-stereo=1;stereo=1;maxaveragebitrate=128000;useinbandfec=1;usedtx=0`. Switching sources calls `replaceTrack()`.
-- **The receiver code is identical in both modes.** At runtime it calls `GET /api/info` → `{ mode: 'local' | 'web' }` and picks its endpoints from that.
+- **The receiver code is identical in both modes.** At runtime it calls `GET /api/info` → `{ mode: 'LOCAL' | 'WEB' }` and picks its endpoints from that.
 - **Plain HTTP is fine for the receiver in local mode.** It only plays audio, and `RTCPeerConnection` doesn't require a secure context, so there are no certificate problems. Task 9 confirms this on real browsers.
 - **Shared sender logic lives in `packages/sender-core`.** It's platform-agnostic: an `RTCPeerConnection` factory and an event-stream factory are passed in. It runs in the browser, in Electron, and in React Native through `react-native-webrtc`, whose API mirrors the W3C one.
 
@@ -70,7 +70,7 @@ packages/
 | Mode | Method & path | Caller | Body → Response |
 |---|---|---|---|
 | web | `POST /api/sessions` | sender | `{name, platform, discoverable}` → `{sessionId, code, senderToken, expiresAt}` |
-| web | `GET /api/sessions/:id/events` | sender (Bearer) | SSE: `offer {viewerId, sdp, viewerName}`, `viewer-left {viewerId}`, `ping` |
+| web | `GET /api/sessions/:id/events` | sender (Bearer) | SSE: `OFFER {viewerId, sdp, viewerName}`, `VIEWER_LEFT {viewerId}`, `PING` |
 | web | `POST /api/sessions/:id/answers/:viewerId` | sender (Bearer) | `{sdp}` or `{error}` → 204 |
 | web | `DELETE /api/sessions/:id` | sender (Bearer) | → 204 |
 | web | `GET /api/sessions/nearby` | receiver | → `[{code, name, platform}]` for the same public IPv4, or the same IPv6 /64, where discoverable |
@@ -210,7 +210,7 @@ Work on branch `feat/mvp`. Never stage or commit: leave every change uncommitted
     4. wait for ICE gathering
     5. `sender.setParameters({ encodings: [{ maxBitrate: 160_000, priority: 'high' }] })`
   - `removeViewer(id)`, `viewers` (with state), `close()`, and events for viewer state changes
-- [ ] `transports/web.ts` → `WebTransport({ baseUrl, eventStream })`:
+- [ ] `transports/web.ts` → `WebSignalingTransport({ baseUrl, eventStream })`:
   - creates the session, subscribes to SSE, answers each offer through `SenderSession`, POSTs the answer or an error
   - reconnects the SSE with backoff and the same token
   - `EventStreamFactory` is passed in: fetch streaming in browsers and Electron, `react-native-sse` in React Native
@@ -224,7 +224,7 @@ Work on branch `feat/mvp`. Never stage or commit: leave every change uncommitted
 - [ ] `config/bodyparser.ts`: add `application/sdp` to the raw types, and read it with `request.raw()`.
 - [ ] `config/app.ts`: `trustProxy` from env, so discovery sees the real client IP behind Caddy.
 - [ ] `@adonisjs/cors`: allow the `/api/sessions*` sender endpoints from `ALLOWED_ORIGINS`, which covers the Electron `app://airsong` origin and dev origins.
-- [ ] Routes: `GET /api/health`, `GET /api/info` (`mode: 'web'`).
+- [ ] Routes: `GET /api/health`, `GET /api/info` (`mode: 'WEB'`).
 - [ ] Static serving with SPA fallback from `apps/server/public/`, which is empty until Phase 2: the receiver build will be served at `/` and the sender-web build at `/send/`. Serve `sw.js` and `index.html` with `no-cache`.
 - [ ] **Verify:** `node ace serve --hmr`, and `curl :3333/api/info` responds.
 - [ ] **Check:** typecheck 0 errors, lint 0 warnings, the build succeeds, and a local run where something runs.
@@ -249,7 +249,7 @@ Work on branch `feat/mvp`. Never stage or commit: leave every change uncommitted
 - [ ] **Check:** typecheck 0 errors, lint 0 warnings, the build succeeds, and a local run where something runs.
 
 **Task 10: `apps/sender-web` (Vite + TS)**
-- [ ] Use `sender-core` with `WebTransport` and a fetch-stream `EventStreamFactory`. `base: '/send/'`.
+- [ ] Use `sender-core` with `WebSignalingTransport` and a fetch-stream `EventStreamFactory`. `base: '/send/'`.
 - [ ] Sources:
   - **System/tab audio:** `getDisplayMedia({ video: true, audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }, systemAudio: 'include', selfBrowserSurface: 'exclude' })`. Stop the video tracks, and show an error if there's no audio track ("tick *Share system/tab audio*"). Handle `track.onended`.
   - **Test tone:** an `OscillatorNode` → `MediaStreamDestination`, shown only in dev or test.
@@ -277,7 +277,7 @@ Work on branch `feat/mvp`. Never stage or commit: leave every change uncommitted
 - [ ] `app/controllers/sessions_controller.ts`: `store` and `destroy`. `app/middleware/sender_auth_middleware.ts`: Bearer `senderToken`.
 - [ ] `app/sessions/sse.ts`: a `PassThrough` stream sent with `response.stream(...)`.
   - Headers: `text/event-stream`, `Cache-Control: no-cache`, `X-Accel-Buffering: no`.
-  - `ping` every 15 s, and `detachSender` on close.
+  - `PING` every 15 s, and `detachSender` on close.
   - Make sure no compression middleware buffers this route.
 - [ ] `POST /api/sessions/:id/answers/:viewerId` resolves the pending offer.
 - [ ] Rate limits: 10 session creations per IP per minute.
@@ -287,10 +287,10 @@ Work on branch `feat/mvp`. Never stage or commit: leave every change uncommitted
 - [ ] `app/controllers/whep_controller.ts`: `POST /api/sessions/:code/whep`:
   1. validate the SDP
   2. create a pending offer
-  3. push the `offer` SSE event to the sender
+  3. push the `OFFER` SSE event to the sender
   4. wait for the answer → `201` with `Content-Type: application/sdp` and a `Location` header
   5. `504` on timeout, `404` if the session is unknown or the sender is gone
-- [ ] `DELETE …/whep/:viewerId` sends a `viewer-left` event.
+- [ ] `DELETE …/whep/:viewerId` sends a `VIEWER_LEFT` event.
 - [ ] `GET /api/sessions/nearby` and `GET /api/sessions/:code`.
 - [ ] Rate limit: 20 failed code lookups per IP per minute.
 - [ ] **Check:** typecheck 0 errors, lint 0 warnings, the build succeeds, and a local run where something runs.
@@ -325,7 +325,7 @@ Work on branch `feat/mvp`. Never stage or commit: leave every change uncommitted
 **Task 13: Local mode in Electron**
 - [ ] Main process runs a `node:http` server on `0.0.0.0:47800`, or the next free port:
   - serves the receiver `dist` (from `extraResources`)
-  - `GET /api/info` → `{ mode: 'local', name, platform }`
+  - `GET /api/info` → `{ mode: 'LOCAL', name, platform }`
   - `GET /api/ice-servers` → `[]`
   - `POST /api/whep?k=` and `DELETE` are sent to the renderer over IPC, `sender-core` `handleLocalWhep` runs there, and the reply comes back. Time out after 10 s.
 - [ ] LAN IPs come from `os.networkInterfaces()` (non-internal IPv4). The UI lets you pick the interface, shows the QR code for `http://<ip>:<port>/#k=<code>`, and shows the URL as text.
@@ -408,7 +408,7 @@ All automated tests are written here, after development is complete. The items a
 
 **Tests for Task 3: `packages/sender-core` (Vitest, fake PC factory)**
 - [ ] `tuneOpusSdp`: test against fixture SDPs from Chrome, Safari, Firefox and `react-native-webrtc`.
-- [ ] Answer flow with a fake PC, viewer limit → `SESSION_FULL`, the transport handles an `offer` event by POSTing an answer, and a wrong local key → 401.
+- [ ] Answer flow with a fake PC, viewer limit → `SESSION_FULL`, the transport handles an `OFFER` event by POSTing an answer, and a wrong local key → 401.
 
 **Tests for Task 5: SessionRegistry and PendingOffers (Japa unit)**
 - [ ] unique codes
@@ -417,7 +417,7 @@ All automated tests are written here, after development is complete. The items a
 - [ ] pending offers time out and resolve exactly once
 
 **Tests for Task 6: Sender endpoints and SSE (Japa functional)**
-- [ ] Create → open SSE (read the raw stream in the test) → receive `ping`. A wrong token gets 401.
+- [ ] Create → open SSE (read the raw stream in the test) → receive `PING`. A wrong token gets 401.
 
 **Tests for Task 7: Receiver WHEP endpoints and discovery (Japa functional)**
 - [ ] **Full relay test:** a fake sender opens the SSE stream, the test POSTs an offer as the receiver, the fake sender POSTs an answer, and the receiver gets 201 with that SDP. Also test: timeout → 504, and two clients from the same IP see each other in `nearby` while one from another IP doesn't.

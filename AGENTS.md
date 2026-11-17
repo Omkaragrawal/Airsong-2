@@ -191,7 +191,7 @@ There are no user accounts.
 There's no wrapper around responses; each endpoint returns its payload directly.
 
 - **WHEP endpoints** take and return `application/sdp`. A successful offer gets `201`, with the answer SDP as the body and a `Location` header for that receiver's connection.
-- **SSE** (`text/event-stream`) carries `offer`, `viewer-left` and `ping` events to the sender.
+- **SSE** (`text/event-stream`) carries `OFFER`, `VIEWER_LEFT` and `PING` events to the sender.
 - **JSON endpoints** return plain JSON. Errors return `{ code, message }` with a matching HTTP status. The codes live in `packages/protocol`: `SESSION_NOT_FOUND`, `SESSION_FULL`, `INVALID_SDP`, `SENDER_TIMEOUT` (`504`), `UNAUTHORIZED`, `RATE_LIMITED`. Add new codes there; never use inline strings.
 
 ### Config access
