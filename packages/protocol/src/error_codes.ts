@@ -10,6 +10,9 @@ export enum ErrorCodeEnum {
   UNAUTHORIZED = 'UNAUTHORIZED',
   RATE_LIMITED = 'RATE_LIMITED',
   INTERNAL_ERROR = 'INTERNAL_ERROR',
+  NOT_FOUND = 'NOT_FOUND',
+  BAD_REQUEST = 'BAD_REQUEST',
+  PAYLOAD_TOO_LARGE = 'PAYLOAD_TOO_LARGE',
 }
 
 /** HTTP status returned with each error code. */
@@ -21,6 +24,9 @@ export const ErrorStatusConst: Record<ErrorCodeEnum, number> = {
   [ErrorCodeEnum.UNAUTHORIZED]: 401,
   [ErrorCodeEnum.RATE_LIMITED]: 429,
   [ErrorCodeEnum.INTERNAL_ERROR]: 500,
+  [ErrorCodeEnum.NOT_FOUND]: 404,
+  [ErrorCodeEnum.BAD_REQUEST]: 400,
+  [ErrorCodeEnum.PAYLOAD_TOO_LARGE]: 413,
 };
 
 /** The JSON error envelope every failing endpoint returns. */

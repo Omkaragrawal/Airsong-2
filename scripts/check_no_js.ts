@@ -21,6 +21,7 @@ const ALLOWED_JS_FILES: ReadonlySet<string> = new Set([
   'commitlint.config.js',
   'ecosystem.config.js',
   'lint-staged.config.js',
+  'apps/server/ace.js',
 ]);
 
 /** The repo root, worked out from this file's location so the script runs from any folder. */

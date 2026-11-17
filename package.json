@@ -27,6 +27,9 @@
     "typecheck": "turbo run typecheck",
     "typecheck:root": "tsc --noEmit && tsc --noEmit -p scripts/tsconfig.json"
   },
+  "allowScripts": {
+    "@swc/core": true
+  },
   "config": {
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"

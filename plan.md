@@ -109,7 +109,7 @@ Shared settings live once at the repo root. A workspace's own config file only a
 ### 2. All code is TypeScript
 
 - **What counts:** source code, tests, build and repo scripts, and tool config files are all `.ts` or `.tsx`. That includes `vite.config.ts`, `vitest.config.ts`, `playwright.config.ts`, `eslint.config.ts` and Expo's `app.config.ts`.
-- **Kept JavaScript files:** five existing files stay JavaScript by the user's decision and are on the allow-list: `.husky/install.mjs`, `.prettierrc.mjs`, `commitlint.config.js`, `ecosystem.config.js` and `lint-staged.config.js`. Don't convert them to TypeScript. They are exempt from the `// @ts-check` rule in the exceptions below.
+- **Kept JavaScript files:** six existing files stay JavaScript by the user's decision and are on the allow-list: `.husky/install.mjs`, `.prettierrc.mjs`, `commitlint.config.js`, `ecosystem.config.js`, `lint-staged.config.js`, and `apps/server/ace.js` (the AdonisJS ace entrypoint). Don't convert them to TypeScript. They are exempt from the `// @ts-check` rule in the exceptions below.
 - **JavaScript is off:** set `allowJs: false` in `tsconfig.base.json`. The kept root `tsconfig.json` still has `allowJs: true`, because only its `exclude` and `types` change.
 - **`type`, never `interface`:** every object shape is a `type` alias with a `Type` suffix, for example `SessionType`. Use `interface` only to add fields to a library's existing interface, such as Adonis's `HttpContext` or the browser's `Window`, because TypeScript can't merge a `type` into those. Enforce it with `@typescript-eslint/consistent-type-definitions: ['error', 'type']` in the root `eslint.config.ts` (Task 1). Naming suffixes are listed in AGENTS.md → "Naming — declaration suffixes".
 - **Repo scripts:** files in `scripts/` run directly with Node 26.13+ (`node scripts/x.ts`), which only strips types. They use `scripts/tsconfig.json` with `erasableSyntaxOnly: true`, so they can't use enums, namespaces or parameter properties.
@@ -147,7 +147,7 @@ Work on branch `feat/mvp`. Never stage or commit: leave every change uncommitted
 **Checks during development:** no tests are written until Phase 7. Every task must show typecheck with 0 errors, lint with 0 warnings, a successful build and, where something runs, a local run. Dev servers and apps may be started on this machine, with three rules: no external or third-party services, stop every process you start before reporting, and leave no background servers running. For every check, report the exact command, its exit code and the key output lines. Steps that need an outside service are run by the user, not the agent: EAS cloud builds (Tasks 18–19, and Task 15 when it isn't built locally) and playback from third-party apps such as YouTube or Spotify (Task 16's Verify and the milestone demos). The agent prepares the step, and the user reports the result.
 
 **Before Task 1:** the repo already has config files, and the user has decided what happens to each:
-- **Kept:** the five JavaScript files (`.husky/install.mjs`, `.prettierrc.mjs`, `commitlint.config.js`, `ecosystem.config.js`, `lint-staged.config.js`) and `tsconfig.json`. Change them only where Task 1 says so. `.prettierrc.config.ts` also stays, unused.
+- **Kept:** the six JavaScript files (`.husky/install.mjs`, `.prettierrc.mjs`, `commitlint.config.js`, `ecosystem.config.js`, `lint-staged.config.js`, and, from Task 4, `apps/server/ace.js`) and `tsconfig.json`. Change them only where Task 1 says so. `.prettierrc.config.ts` also stays, unused.
 - **Deleted in Task 1:** `eslint.config.mjs`, `.eslintrc.json` and `.eslintignore`.
 - **Off-limits:** `scratchpad/` (the user's own files), `skills-lock.json`, `.claude/`, and the empty root folders `client/`, `server/` and `index.ts/`. Don't read, edit or delete any of them unless the user says so. The root `server/` folder is not `apps/server/`.
 
@@ -220,7 +220,7 @@ Work on branch `feat/mvp`. Never stage or commit: leave every change uncommitted
 ### Phase 1 — Server scaffold
 
 **Task 4: Server scaffold (AdonisJS v7)**
-- [ ] `npm init adonisjs@latest apps/server` with the most minimal kit (no Lucid, no auth). Check the kit flags with `--help` first.
+- [ ] Create `apps/server` by hand (AdonisJS v7), using the `api` starter kit's framework files as the reference: `create-adonisjs@3.4.0` no longer ships a minimal/slim kit and its only non-Lucid/non-auth kit doesn't exist, so the server is hand-scaffolded with `@adonisjs/core` and `@adonisjs/cors` only — no Lucid, auth, session, shield, vine, tuyau or sqlite.
 - [ ] `config/bodyparser.ts`: add `application/sdp` to the raw types, and read it with `request.raw()`.
 - [ ] `config/app.ts`: `trustProxy` from env, so discovery sees the real client IP behind Caddy.
 - [ ] `@adonisjs/cors`: allow the `/api/sessions*` sender endpoints from `ALLOWED_ORIGINS`, which covers the Electron `app://airsong` origin and dev origins.

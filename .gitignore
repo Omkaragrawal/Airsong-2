@@ -152,6 +152,7 @@ scratchpad/
 
 # Airsong build output and generated folders
 build
+.adonisjs
 apps/sender-mobile/android/
 apps/sender-mobile/ios/
 apps/server/public/
