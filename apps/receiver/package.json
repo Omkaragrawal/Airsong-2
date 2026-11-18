@@ -1,0 +1,23 @@
+{
+  "name": "@airsong/receiver",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite dev",
+    "lint": "eslint --max-warnings=0 . --ext=.ts",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.sw.json"
+  },
+  "dependencies": {
+    "@airsong/protocol": "*",
+    "@airsong/sender-core": "*"
+  },
+  "devDependencies": {
+    "@vite-pwa/assets-generator": "^2.0.0",
+    "vite-plugin-pwa": "^2.0.0",
+    "workbox-precaching": "^7.4.1",
+    "workbox-routing": "^7.4.1"
+  }
+}

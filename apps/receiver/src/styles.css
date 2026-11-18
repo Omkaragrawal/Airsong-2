@@ -1,0 +1,175 @@
+:root {
+  color-scheme: dark;
+  --bg: #0b0b0f;
+  --surface: #16161d;
+  --text: #f4f4f6;
+  --muted: #9a9aa6;
+  --accent: #6ee7ff;
+  --accent-ink: #04141a;
+  --danger: #ff6b6b;
+  --radius: 14px;
+  --gap: 16px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  line-height: 1.4;
+}
+
+#app {
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  min-height: 100vh;
+}
+
+.home,
+.player,
+.fatal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.home__title,
+.player__title {
+  margin: 8px 0 0;
+  font-size: 1.6rem;
+}
+
+.home__subtitle {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.home__hint,
+.player__code {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.field {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid #2a2a35;
+  border-radius: var(--radius);
+}
+
+.field:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.btn {
+  appearance: none;
+  border: 0;
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text);
+  background: var(--surface);
+}
+
+.btn--primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.btn--ghost {
+  background: transparent;
+  border: 1px solid #2a2a35;
+  color: var(--muted);
+}
+
+.btn--list {
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+}
+
+.nearby {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.player__status {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.player__status--error {
+  color: var(--danger);
+}
+
+.player__status--playing {
+  color: var(--accent);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  font-variant-numeric: tabular-nums;
+}
+
+.stats dt {
+  color: var(--muted);
+}
+
+.stats dd {
+  margin: 0;
+  text-align: right;
+}
+
+.volume {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.95rem;
+}
+
+[hidden] {
+  display: none !important;
+}

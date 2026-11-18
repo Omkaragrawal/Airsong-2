@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Airsong WHEP spike (dev only)</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        padding: 16px;
+        background: #0b0b0f;
+        color: #f4f4f6;
+      }
+      h1 {
+        font-size: 1.1rem;
+      }
+      label {
+        display: block;
+        margin: 10px 0 4px;
+        color: #9a9aa6;
+        font-size: 0.85rem;
+      }
+      input,
+      select,
+      button {
+        font-size: 1rem;
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid #2a2a35;
+        background: #16161d;
+        color: #f4f4f6;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      button {
+        background: #6ee7ff;
+        color: #04141a;
+        font-weight: 700;
+        margin-top: 12px;
+        cursor: pointer;
+      }
+      #log {
+        white-space: pre-wrap;
+        background: #16161d;
+        border-radius: 10px;
+        padding: 12px;
+        margin-top: 12px;
+        font-family: ui-monospace, monospace;
+        font-size: 0.8rem;
+        max-height: 50vh;
+        overflow: auto;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Airsong WHEP spike — dev only (not shipped)</h1>
+    <p style="color: #9a9aa6">
+      Raw WHEP handshake against a running sender/server. Served by <code>vite dev</code> only.
+    </p>
+
+    <label for="mode">Mode</label>
+    <select id="mode">
+      <option value="WEB">WEB — POST /api/sessions/:code/whep</option>
+      <option value="LOCAL">LOCAL — POST /api/whep?k=CODE</option>
+    </select>
+
+    <label for="base">Server base (blank = same origin, proxied in dev)</label>
+    <input id="base" placeholder="http://localhost:3333" />
+
+    <label for="code">Code</label>
+    <input id="code" placeholder="ABC123" />
+
+    <label for="name">Name (optional)</label>
+    <input id="name" placeholder="Spike" />
+
+    <div class="row">
+      <button id="connect">Connect</button>
+      <button id="leave" style="background: #ff6b6b; color: #fff">Leave</button>
+    </div>
+
+    <audio id="audio" autoplay playsinline controls style="width: 100%; margin-top: 12px"></audio>
+    <div id="log"></div>
+
+    <script type="module">
+      const $ = (id) => document.getElementById(id);
+      const logEl = $('log');
+      const log = (...args) => {
+        logEl.textContent += args.map((a) => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ') + '\n';
+        logEl.scrollTop = logEl.scrollHeight;
+      };
+      let pc = null;
+      let location = null;
+
+      function whepUrl() {
+        const base = $('base').value.trim();
+        const code = encodeURIComponent($('code').value.trim());
+        const name = $('name').value.trim();
+        const nameQ = name ? `name=${encodeURIComponent(name)}` : '';
+        if ($('mode').value === 'LOCAL') {
+          const q = ['k=' + code, nameQ].filter(Boolean).join('&');
+          return `${base}/api/whep?${q}`;
+        }
+        return `${base}/api/sessions/${code}/whep${nameQ ? `?${nameQ}` : ''}`;
+      }
+
+      $('connect').addEventListener('click', async () => {
+        try {
+          logEl.textContent = '';
+          pc = new RTCPeerConnection();
+          pc.addTransceiver('audio', { direction: 'recvonly' });
+          pc.addEventListener('connectionstatechange', () => log('state:', pc.connectionState));
+          pc.addEventListener('track', (e) => {
+            log('track');
+            $('audio').srcObject = e.streams[0] ?? new MediaStream([e.track]);
+          });
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          await new Promise((resolve) => {
+            if (pc.iceGatheringState === 'complete') return resolve();
+            const t = setTimeout(resolve, 2000);
+            pc.addEventListener('icegatheringstatechange', () => {
+              if (pc.iceGatheringState === 'complete') {
+                clearTimeout(t);
+                resolve();
+              }
+            });
+          });
+          const url = whepUrl();
+          log('POST', url);
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'content-type': 'application/sdp' },
+            body: pc.localDescription.sdp,
+          });
+          log('status', res.status);
+          location = res.headers.get('location');
+          const answer = await res.text();
+          if (res.status !== 201) {
+            log('error body:', answer);
+            return;
+          }
+          await pc.setRemoteDescription({ type: 'answer', sdp: answer });
+          log('connected; Location:', location);
+        } catch (err) {
+          log('ERROR', String(err));
+        }
+      });
+
+      $('leave').addEventListener('click', async () => {
+        try {
+          if (location) {
+            const base = $('base').value.trim();
+            const del = location.startsWith('http') ? location : base + location;
+            await fetch(del, { method: 'DELETE' });
+            log('DELETE', del);
+          }
+          if (pc) pc.close();
+          pc = null;
+          location = null;
+        } catch (err) {
+          log('ERROR', String(err));
+        }
+      });
+    </script>
+  </body>
+</html>
