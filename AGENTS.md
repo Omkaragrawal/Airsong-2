@@ -191,7 +191,7 @@ There are no user accounts.
 There's no wrapper around responses; each endpoint returns its payload directly.
 
 - **WHEP endpoints** take and return `application/sdp`. A successful offer gets `201`, with the answer SDP as the body and a `Location` header for that receiver's connection.
-- **SSE** (`text/event-stream`) carries `offer`, `viewer-left` and `ping` events to the sender.
+- **SSE** (`text/event-stream`) carries `OFFER`, `VIEWER_LEFT` and `PING` events to the sender.
 - **JSON endpoints** return plain JSON. Errors return `{ code, message }` with a matching HTTP status. The codes live in `packages/protocol`: `SESSION_NOT_FOUND`, `SESSION_FULL`, `INVALID_SDP`, `SENDER_TIMEOUT` (`504`), `UNAUTHORIZED`, `RATE_LIMITED`. Add new codes there; never use inline strings.
 
 ### Config access
@@ -221,7 +221,7 @@ There's no wrapper around responses; each endpoint returns its payload directly.
   Known gap: the ESLint step targets `src/**`, which doesn't exist. ESLint normally errors when a pattern matches no files, so expect that step to fail until it's fixed. This hasn't been checked by running it. Husky setup is skipped when `NODE_ENV=production` or `CI=true` (`.husky/install.mjs`).
 - **Releases:** standard-version (`.versionrc.json`). It bumps the version, writes the changelog, commits and tags.
 - **Lint and format:** ESLint (typescript-eslint, `--max-warnings=0`) plus Prettier.
-- **TypeScript only:** all source, tests, scripts and tool configs are `.ts` or `.tsx`. The only exceptions are Kotlin (Android modules), Swift (iOS module and broadcast extension), files Expo generates, a JS config only where a tool can't load TypeScript, and five existing JS config files kept as they are: `.husky/install.mjs`, `.prettierrc.mjs`, `commitlint.config.js`, `ecosystem.config.js` and `lint-staged.config.js`. `npm run check:no-js` enforces this.
+- **TypeScript only:** all source, tests, scripts and tool configs are `.ts` or `.tsx`. The only exceptions are Kotlin (Android modules), Swift (iOS module and broadcast extension), files Expo generates, a JS config only where a tool can't load TypeScript, and six existing JS config files kept as they are: `.husky/install.mjs`, `.prettierrc.mjs`, `commitlint.config.js`, `ecosystem.config.js`, `lint-staged.config.js`, and `apps/server/ace.js`. `npm run check:no-js` enforces this.
 - **Every workspace extends the root configuration** (tsconfig, ESLint, Vitest). A workspace never weakens a root setting without a comment next to it explaining why.
 
 ## Naming — declaration suffixes
