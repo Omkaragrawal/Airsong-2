@@ -1,7 +1,15 @@
 import { z } from 'zod';
 
 import { ErrorCodeEnum } from './error_codes.js';
-import { type CreateSessionResponseType, PlatformEnum } from './http_api.js';
+import {
+  type CreateSessionResponseType,
+  type IceServersResponseType,
+  type InfoResponseType,
+  type NearbySessionType,
+  PlatformEnum,
+  SessionModeEnum,
+  type SessionSummaryType,
+} from './http_api.js';
 import { type OfferEventType, type ViewerLeftEventType } from './sse_events.js';
 
 /** Longest accepted SDP, in UTF-8 bytes. */
@@ -68,6 +76,39 @@ export const offerEventSchema = z.object({
 export const viewerLeftEventSchema = z.object({
   viewerId: z.string().min(1),
 }) satisfies z.ZodType<ViewerLeftEventType>;
+
+/** `GET /api/info` response. Clients validate it before switching endpoints on `mode`. */
+export const infoResponseSchema = z.object({
+  mode: z.enum(SessionModeEnum),
+  name: z.string().optional(),
+  platform: z.enum(PlatformEnum).optional(),
+  version: z.string(),
+}) satisfies z.ZodType<InfoResponseType>;
+
+/** One entry of the `GET /api/sessions/nearby` response array. */
+export const nearbySessionSchema = z.object({
+  code: z.string(),
+  name: z.string(),
+  platform: z.enum(PlatformEnum),
+}) satisfies z.ZodType<NearbySessionType>;
+
+/** `GET /api/sessions/:code` response. */
+export const sessionSummarySchema = z.object({
+  name: z.string(),
+  platform: z.enum(PlatformEnum),
+}) satisfies z.ZodType<SessionSummaryType>;
+
+/** `GET /api/ice-servers` response. */
+export const iceServersResponseSchema = z.object({
+  iceServers: z.array(
+    z.object({
+      urls: z.union([z.string(), z.array(z.string())]),
+      username: z.string().optional(),
+      credential: z.string().optional(),
+    }),
+  ),
+  ttl: z.number(),
+}) satisfies z.ZodType<IceServersResponseType>;
 
 export type CreateSessionBodyType = z.infer<typeof createSessionSchema>;
 

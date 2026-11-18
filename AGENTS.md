@@ -224,6 +224,15 @@ There's no wrapper around responses; each endpoint returns its payload directly.
 - **TypeScript only:** all source, tests, scripts and tool configs are `.ts` or `.tsx`. The only exceptions are Kotlin (Android modules), Swift (iOS module and broadcast extension), files Expo generates, a JS config only where a tool can't load TypeScript, and six existing JS config files kept as they are: `.husky/install.mjs`, `.prettierrc.mjs`, `commitlint.config.js`, `ecosystem.config.js`, `lint-staged.config.js`, and `apps/server/ace.js`. `npm run check:no-js` enforces this.
 - **Every workspace extends the root configuration** (tsconfig, ESLint, Vitest). A workspace never weakens a root setting without a comment next to it explaining why.
 
+## Known security advisories
+
+Accepted, with the reasoning kept here so it is not rediscovered. Re-check with `npm audit` (all dependencies) and `npm audit --omit=dev` (production only).
+
+- **picomatch ReDoS — GHSA-fc5q-39xc-vjpf** (high; published 2026-10-19; affects `<=4.0.7`; no patched version). It reaches the production install through `@adonisjs/core` → `@adonisjs/assembler`, and the dev install additionally through the build tooling (vite, vitest, eslint). The ReDoS triggers only on attacker-controlled glob patterns; the team's assessment is that Airsong never passes attacker input to glob matching, so it is accepted — not a proven non-issue. **Action:** add an `overrides` pin for picomatch the moment a patched version ships.
+- **minimatch globparts DoS — GHSA-g3hv-75wg-m249** (moderate). An `overrides` entry scoped to `eslint-plugin-import-x` forces `minimatch` to `^11.0.8`, and npm resolves a single `minimatch` 11.0.8 for the ESLint toolchain — so `eslint`, `@eslint/config-array` and `typescript-estree` run above their declared `^10` range, by the user's choice. `workbox-build`'s nested copy (through `glob@11`) stays on `minimatch` 10.2.6; that path is dev-only and accepted.
+- **glob AbortSignal cancellation bypass — GHSA-3g3m-2fjr-6pw4** (moderate). Dev-only, through `vite-plugin-pwa` → `workbox-build` → `glob@11.1.0`. The patched `glob` 14.0.2 is outside `workbox-build`'s declared `^11.0.1` range, so it cannot be taken without forcing a major bump. Accepted. **Action:** recheck when `workbox-build` updates.
+- **@adonisjs/eslint-config@3.1.0 — GuardRails High finding, accepted.** The reason is not recorded here; only the GuardRails dashboard carries the detail.
+
 ## Naming — declaration suffixes
 
 Every declaration carries a suffix naming what it is:
