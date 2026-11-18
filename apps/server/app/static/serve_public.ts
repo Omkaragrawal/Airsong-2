@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { statSync } from 'node:fs';
 import { normalize, resolve, sep } from 'node:path';
 import app from '@adonisjs/core/services/app';
 import { type HttpContext } from '@adonisjs/core/http';
@@ -34,6 +34,15 @@ function applyNoCache(ctx: HttpContext, filePath: string): void {
   }
 }
 
+/** True only when the path is an existing regular file; a directory or a stat error is false. */
+function isFile(path: string): boolean {
+  try {
+    return statSync(path).isFile();
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Serves the built front-end from public/. An existing file is returned as-is; any other GET falls
  * back to index.html, so the single-page apps route on the client. index.html and sw.js are sent
@@ -41,14 +50,14 @@ function applyNoCache(ctx: HttpContext, filePath: string): void {
  */
 export function servePublic(ctx: HttpContext): void {
   const requested = safePath(ctx.request.url());
-  if (requested !== null && requested !== PUBLIC_ROOT && existsSync(requested)) {
+  if (requested !== null && requested !== PUBLIC_ROOT && isFile(requested)) {
     applyNoCache(ctx, requested);
     ctx.response.download(requested);
     return;
   }
 
   const indexPath = resolve(PUBLIC_ROOT, 'index.html');
-  if (existsSync(indexPath)) {
+  if (isFile(indexPath)) {
     ctx.response.header('cache-control', 'no-cache');
     ctx.response.download(indexPath);
     return;

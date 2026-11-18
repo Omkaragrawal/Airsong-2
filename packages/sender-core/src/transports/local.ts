@@ -74,7 +74,7 @@ export async function handleLocalWhep(
   const viewerName = nameSchema.safeParse(request.viewerName);
   const viewerId = generateCode();
   try {
-    const answerSdp = await context.session.answer(
+    const { sdp: answerSdp } = await context.session.answer(
       viewerId,
       offer.data,
       viewerName.success ? viewerName.data : undefined,

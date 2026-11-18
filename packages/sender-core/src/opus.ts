@@ -36,31 +36,48 @@ function mergeFormatParams(existing: string, params: OpusParamsType): string {
 }
 
 /**
- * Sets Opus parameters in an SDP. It finds Opus's payload type, then merges `params` into that
- * payload type's `a=fmtp` line: a key that is already there gets the new value, so no key
- * appears twice. An SDP without Opus is returned unchanged.
+ * Sets Opus parameters in an SDP. It locates the audio media section that carries Opus and merges
+ * `params` into that payload type's `a=fmtp` line there: a key already present gets the new value,
+ * so no key appears twice. Both the payload-type lookup and the fmtp search/insert stay within that
+ * one audio section, so a same-numbered payload type in another section (e.g. video) is never
+ * touched. An SDP without Opus in an audio section is returned unchanged.
  */
 export function tuneOpusSdp(sdp: string, params: OpusParamsType): string {
   const lineBreak = sdp.includes('\r\n') ? '\r\n' : '\n';
   const lines = sdp.split(lineBreak);
 
+  // Find the audio media section [sectionStart, sectionEnd) that contains the Opus rtpmap.
+  let sectionStart = -1;
+  let sectionEnd = lines.length;
   let payloadType: string | undefined;
   let rtpmapIndex = -1;
   for (const [index, line] of lines.entries()) {
-    const match = OPUS_RTPMAP_PATTERN.exec(line.trim());
-    if (match?.[1] !== undefined) {
-      payloadType = match[1];
-      rtpmapIndex = index;
-      break;
+    if (line.startsWith('m=')) {
+      if (payloadType !== undefined) {
+        // Opus was found in the current audio section; the next media line ends that section.
+        sectionEnd = index;
+        break;
+      }
+      sectionStart = line.startsWith('m=audio') ? index : -1;
+      continue;
+    }
+    if (sectionStart !== -1 && payloadType === undefined) {
+      const match = OPUS_RTPMAP_PATTERN.exec(line.trim());
+      if (match?.[1] !== undefined) {
+        payloadType = match[1];
+        rtpmapIndex = index;
+      }
     }
   }
   if (payloadType === undefined) {
     return sdp;
   }
 
+  // Search for and insert the fmtp line only inside this audio section.
   const fmtpPrefix = `a=fmtp:${payloadType} `;
-  const fmtpIndex = lines.findIndex((line) => line.startsWith(fmtpPrefix));
-  const existing = lines[fmtpIndex]?.slice(fmtpPrefix.length) ?? '';
+  const relativeFmtpIndex = lines.slice(sectionStart, sectionEnd).findIndex((line) => line.startsWith(fmtpPrefix));
+  const fmtpIndex = relativeFmtpIndex === -1 ? -1 : sectionStart + relativeFmtpIndex;
+  const existing = fmtpIndex === -1 ? '' : (lines[fmtpIndex]?.slice(fmtpPrefix.length) ?? '');
   const fmtpLine = `${fmtpPrefix}${mergeFormatParams(existing, params)}`;
   if (fmtpIndex === -1) {
     lines.splice(rtpmapIndex + 1, 0, fmtpLine);

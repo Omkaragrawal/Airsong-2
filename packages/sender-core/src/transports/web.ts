@@ -11,7 +11,7 @@ import {
 } from '@airsong/protocol';
 
 import { SenderError } from '../sender_error.js';
-import { type SenderSession, type WarningListenerType } from '../sender_session.js';
+import { type AnswerResultType, type SenderSession, type WarningListenerType } from '../sender_session.js';
 
 /** One server-sent event: the `event:` name and the raw `data:` text. */
 export type EventStreamMessageType = {
@@ -305,9 +305,9 @@ export class WebSignalingTransport {
 
   private async answerOffer(created: CreateSessionResponseType, offer: OfferEventType): Promise<void> {
     const viewerId = offer.viewerId;
-    let answerSdp: string;
+    let result: AnswerResultType;
     try {
-      answerSdp = await this.session.answer(viewerId, offer.sdp, offer.viewerName);
+      result = await this.session.answer(viewerId, offer.sdp, offer.viewerName);
     } catch (cause) {
       this.onWarning(`Could not answer viewer ${viewerId}`, cause);
       const code = cause instanceof SenderError ? cause.code : ErrorCodeEnum.INTERNAL_ERROR;
@@ -315,10 +315,11 @@ export class WebSignalingTransport {
       return;
     }
     try {
-      await this.postAnswer(created, viewerId, { sdp: answerSdp });
+      await this.postAnswer(created, viewerId, { sdp: result.sdp });
     } catch (cause) {
-      // The receiver never got the answer, so its connection can't complete.
-      this.session.removeViewer(viewerId);
+      // The receiver never got the answer, so its connection can't complete — but remove only
+      // THIS connection, not a newer offer that replaced it while the post was in flight.
+      this.session.removeViewerIfCurrent(viewerId, result.generation);
       throw cause;
     }
   }

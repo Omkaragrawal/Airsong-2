@@ -1,5 +1,6 @@
-import proxyAddr from 'proxy-addr';
 import { Env } from '@adonisjs/core/env';
+
+import { compileTrustProxy } from './trust_proxy.js';
 
 export default await Env.create(new URL('../', import.meta.url), {
   NODE_ENV: Env.schema.enum(['development', 'production', 'test'] as const),
@@ -17,11 +18,8 @@ export default await Env.create(new URL('../', import.meta.url), {
    */
   TRUST_PROXY: (_name, value): string => {
     const raw = (value ?? 'false').trim();
-    if (raw === 'true' || raw === 'false') {
-      return raw;
-    }
-    // Throws a descriptive error if `raw` is not a valid proxy-addr trust value.
-    proxyAddr.compile(raw);
+    // Validate by compiling; throws a descriptive error for an invalid value or an empty list.
+    compileTrustProxy(raw);
     return raw;
   },
 
